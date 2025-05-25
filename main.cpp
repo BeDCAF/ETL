@@ -90,22 +90,6 @@ std::vector<std::wstring> FindEtlFiles(const std::wstring& directory) {
     return files;
 }
 
-std::string ProcessSystemDirectory(const std::wstring& directory, const std::string& format) {
-    ETLParser parser;
-    std::vector<std::wstring> etlFiles = FindEtlFiles(directory);
-    for (const auto& file : etlFiles) {
-        if (!parser.Parse(file)) {
-            std::wcerr << L"Failed to parse: " << file << std::endl;
-        }
-    }
-    if (format == "csv") {
-        return parser.ToCSV();
-    } else if (format == "json") {
-        return parser.ToJSON();
-    }
-    return "";
-}
-
 std::wstring ConvertUtf8ToWide(const std::string& utf8) {
     int size_needed = MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), (int)utf8.size(), NULL, 0);
     std::wstring wstr(size_needed, 0);
@@ -231,6 +215,22 @@ private:
     std::wstring filename_;
     std::vector<EventData> events_;
 };
+
+std::string ProcessSystemDirectory(const std::wstring& directory, const std::string& format) {
+    ETLParser parser;
+    std::vector<std::wstring> etlFiles = FindEtlFiles(directory);
+    for (const auto& file : etlFiles) {
+        if (!parser.Parse(file)) {
+            std::wcerr << L"Failed to parse: " << file << std::endl;
+        }
+    }
+    if (format == "csv") {
+        return parser.ToCSV();
+    } else if (format == "json") {
+        return parser.ToJSON();
+    }
+    return "";
+}
 
 int main(int argc, char* argv[]) {
     if (argc < 3) {
