@@ -30,6 +30,7 @@ struct EventData {
 
 // Вспомогательные функции
 
+// Экранирование данных для записи в CSV
 std::string EscapeForCSV(const std::string& data) {
     bool needQuotes = false;
     if (data.find(',') != std::string::npos || data.find('"') != std::string::npos || data.find('\n') != std::string::npos) {
@@ -48,6 +49,7 @@ std::string EscapeForCSV(const std::string& data) {
     return data;
 }
 
+// Преобразование FILETIME в локальное время формата строки
 std::wstring ConvertFileTimeToLocalTime(const LARGE_INTEGER& ft) {
     FILETIME fileTime, localFileTime;
     fileTime.dwLowDateTime = ft.LowPart;
@@ -66,6 +68,7 @@ std::wstring ConvertFileTimeToLocalTime(const LARGE_INTEGER& ft) {
     return std::wstring(buffer);
 }
 
+// Конвертация wstring в UTF-8
 std::string WideToUTF8(const std::wstring& wstr) {
     int size_needed = WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), (int)wstr.size(), NULL, 0, NULL, NULL);
     std::string strTo(size_needed, 0);
@@ -73,6 +76,7 @@ std::string WideToUTF8(const std::wstring& wstr) {
     return strTo;
 }
 
+// Поиск ETL файлов в указанной директории
 std::vector<std::wstring> FindEtlFiles(const std::wstring& directory) {
     std::vector<std::wstring> files;
     std::wstring searchPath = directory + L"\\*.etl";
@@ -90,6 +94,7 @@ std::vector<std::wstring> FindEtlFiles(const std::wstring& directory) {
     return files;
 }
 
+// Конвертация строки UTF-8 в wstring для WinAPI
 std::wstring ConvertUtf8ToWide(const std::string& utf8) {
     int size_needed = MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), (int)utf8.size(), NULL, 0);
     std::wstring wstr(size_needed, 0);
@@ -102,6 +107,7 @@ class ETLParser {
 public:
     ETLParser() {}
 
+    // Парсинг ETL-файла
     bool Parse(const std::wstring& filename) {
         filename_ = filename;
         EVENT_TRACE_LOGFILE logFile = { 0 };
@@ -121,7 +127,7 @@ public:
 
         return status == ERROR_SUCCESS;
     }
-
+    // Формирование CSV
     std::string ToCSV() {
         std::stringstream ss;
         // Заголовки колонок
@@ -154,7 +160,8 @@ public:
         }
         return ss.str();
     }
-
+    
+    // Формирование JSON
     std::string ToJSON() {
         std::stringstream ss;
         ss << "[\n";
@@ -188,13 +195,14 @@ public:
     }
 
 private:
+    // Функция для обработки событий
     static void WINAPI EventCallback(EVENT_RECORD* pEvent) {
         ETLParser* parser = static_cast<ETLParser*>(pEvent->UserContext);
         if (parser) {
             parser->HandleEvent(pEvent);
         }
     }
-
+    // Обработка отдельного события и сохранение данных
     void HandleEvent(PEVENT_RECORD pEvent) {
         EventData data;
         data.EventID = pEvent->EventHeader.EventDescriptor.Id;
@@ -216,6 +224,7 @@ private:
     std::vector<EventData> events_;
 };
 
+// Обработка всех ETL файлов в директории и вывод в заданном формате
 std::string ProcessSystemDirectory(const std::wstring& directory, const std::string& format) {
     ETLParser parser;
     std::vector<std::wstring> etlFiles = FindEtlFiles(directory);
